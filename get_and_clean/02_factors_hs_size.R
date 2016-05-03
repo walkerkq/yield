@@ -1,3 +1,8 @@
+# 02_factors_hs_size.R
+# scrape names and sizes of MN and ND high schools from web
+# in: none
+# out: factors_schoolsize.csv
+
 # size of HS
 # MN: http://www.mshsl.org/mshsl/enrollments.asp
 library(XML)
