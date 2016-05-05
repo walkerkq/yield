@@ -27,6 +27,15 @@ data$Ethnicity.Indicator <- 0
 data$Lutheran.Indicator <- 0
 data$Religious.Indicator <- 0
 data$Visit.Before.App <- 0
+data$FAFSA <- 0
+data$Zip.Admits.TY <- 0
+data$Zip.Deposits.LY <- 0
+
+zip.admits <- data.frame(table(data$Year, data$Zip))
+colnames(zip.admits) <- c("Year", "Zip", "Count")
+zip.deposits <- data.frame(table(data$Year[data$Contact.Status=="Deposit"], data$Zip[data$Contact.Status=="Deposit"]))
+colnames(zip.deposits) <- c("Year", "Zip", "Count")
+year.ref <- data.frame(TY=c("2015 Fall", "2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall"), LY=c("2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall", NA), stringsAsFactors=FALSE)
 
 for(j in seq_along(data[,1])){
     
@@ -58,6 +67,8 @@ for(j in seq_along(data[,1])){
     }
     
     if(!is.na(data$Award.Status[j])){
+        data$FAFSA[j] <- 1
+        
         if(data$Award.Status[j]=="No Award") {
             data$Award.Status[j] <- 0 
         } else if(data$Award.Status[j]=="Award Complete") {
@@ -98,13 +109,21 @@ for(j in seq_along(data[,1])){
             data$Visit.Early[j] <- as.Date("2016-08-01") - data$First.Visit[j]
         } 
     } else if(is.na(data$First.Visit[j])) { data$Visit.Early[j] <- NA }
-
+    
+    # calculate # of admits from zip code currently
+    zip.ad <- zip.admits[zip.admits$Year==data$Year[j] & zip.admits$Zip==data$Zip[j], 3]
+    if(length(zip.ad)>0) data$Zip.Admits.TY[j] <- zip.ad
+    
+    # calculate # of deposts from zip code last year
+    LY <- year.ref[year.ref$TY==data$Year[j], 2]
+    zip.dep <- zip.deposits[zip.deposits$Year==LY & zip.deposits$Zip==data$Zip[j], 3]
+    if(length(zip.dep)>0) data$Zip.Deposits.LY[j] <- zip.dep  
 }
-data <- data[!duplicated(data), ]
+#data <- data[!duplicated(data), ]
 
 # write.csv(data, "full_factors.csv", row.names=FALSE)
 
 # remove excess
-data.min <- data[,c(1,2,6,7,8,18,19,20,22:50)]
+data.min <- data[,c(1,2,6,7,8,18,19,20,22:53)]
 # write.csv(data.min, "min_factors.csv", row.names=FALSE)
 

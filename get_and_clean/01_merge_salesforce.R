@@ -11,7 +11,13 @@ setwd("/Users/kwalker/git_projects/yield/data")
 ####################### FINANCIAL AID OBJECT ####################### 
 finaid <- read.csv("FinAidFactors.csv", stringsAsFactors=FALSE) 
 ## DUPES!!!!
-
+finaid_condense <- NULL
+for(fa in unique(finaid$Application.ID)){
+    sub <- finaid[finaid$Application.ID==fa, ]
+    sub <- sub[order(-sub$Total.Gift), ]
+    keep <- sub[1,]
+    finaid_condense <- rbind(finaid_condense, keep)
+}
 # GOOD.
 ####################### SCHOLARSHIP OBJECT ####################### 
 schol <- read.csv("ScholFactors.csv", stringsAsFactors=FALSE)
@@ -76,8 +82,9 @@ colnames(app) <- c("ID", "Type", "International", "Year", "Contact.Status", "Adm
 app <- app[app$Type=="First Year" & app$International==0, ]
 app <- app[,c(1,4:23)]
 
+####################### MERGE ####################### 
 merge1 <- merge(app, visit_condense, by="ID", all.x=TRUE)
-merge2 <- merge(merge1, finaid, by.x="ID", by.y="Application.ID", all.x=TRUE)
+merge2 <- merge(merge1, finaid_condense, by.x="ID", by.y="Application.ID", all.x=TRUE)
 salesforce <- merge(merge2, schol_condense, by="ID", all.x=TRUE)
 # write.csv(salesforce, "salesforce_combined.csv", row.names=FALSE)
 
