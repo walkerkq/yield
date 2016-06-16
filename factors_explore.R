@@ -23,6 +23,10 @@ ggplot(missing2[missing2$variable!="2017 Fall", ], aes(Variable, value)) + geom_
     scale_fill_brewer(palette="Paired") + ylab("Percent Missing") + xlab("") + theme_classic() + geom_hline(yintercept=.4) + 
     theme(axis.text.x = element_text(angle=30, hjust=1, size=12)) + labs(title="Missingness by Variable")
 
+# check for collinearity
+collin <- round(cor(data1[,c(3,4,7,8, 11:37)], use = "pair"), 2) 
+# don't use zip alumni pop, made deposit
+
 # option 1: drop 2010-2012 + impute missing values (+ drop schol. status, hs size and total inst. gift)
 # option 2: drop award status, comp. cost, first visit, gross need, group visit, hs size, ind. visit, last visit, schol. visit, scholarship status, total gift, total inst. gift and visit early (13 out of 40 vars)
 # do both and compare
@@ -54,9 +58,15 @@ test1 <- data1fit.imp[-train_ind, ]
 # fit model
 fit1g <- glm(Final.Status ~ ., train1, family="binomial")
 fit1gs <- step(fit1g, direction="both", trace=0)
-coef1 <- exp(cbind(Odds.Ratio = coef(fit1gs), confint(fit1gs)))
+fit1gs2 <- glm(Final.Status ~ GPA + Number.Campus.Visits + Ind.Visit + 
+                   Group.Visit + Schol.Visit + Comprehensive.Cost + 
+                   Total.Gift + Zip.Alumni.Density + Visit.Before.App + 
+                   FAFSA + Visit.Early, train1, family="binomial") 
+                    # fewer and fewer vars are sig with each rerun
 
-test1$Predictions_raw <- unlist(predict(fit1gs, test1, type="response"))
+coef1 <- exp(cbind(Odds.Ratio = coef(fit1gs2), confint(fit1gs2)))
+
+test1$Predictions_raw <- unlist(predict(fit1gs2, test1, type="response"))
 test1$Predictions <- unlist(round(test1$Predictions_raw))
 
 for(u in seq_along(test1$Predictions)){
@@ -66,7 +76,7 @@ for(u in seq_along(test1$Predictions)){
     }
 }
 test1$Correct <- unlist(test1$Correct)
-table(test1$Correct) # 94.1% correct / power = 0.962
+table(test1$Correct) # 97.8% correct / power = 0.985
 
 
 
@@ -96,13 +106,10 @@ test2 <- data2fit.imp[-train_ind, ]
 # fit model
 fit2g <- glm(Final.Status ~ ., train2, family="binomial")
 fit2gs <- step(fit2g, direction="both", trace=0)
-fit2gs2 <- glm(Final.Status ~ ACT + GPA + Number.Campus.Visits + Zip.Median.Income + 
-                   Zip.Pct.White + Zip.Alumni.Density + Music.Interest + Athletic.Interest + 
-                   Legacy.Relationship + Lutheran.Indicator, train2, family="binomial")
 
-coef2 <- exp(cbind(Odds.Ratio = coef(fit2gs2), confint(fit2gs2)))
+coef2 <- exp(cbind(Odds.Ratio = coef(fit2gs), confint(fit2gs)))
 
-test2$Predictions_raw <- unlist(predict(fit2gs2, test2, type="response"))
+test2$Predictions_raw <- unlist(predict(fit2gs, test2, type="response"))
 test2$Predictions <- unlist(round(test2$Predictions_raw))
 for(u in seq_along(test2$Predictions)){
     if(test2$Predictions[u] == test2$Final.Status[u]) { test2$Correct[u] <- "Correct" 
@@ -111,6 +118,6 @@ for(u in seq_along(test2$Predictions)){
     }
 }
 test2$Correct <- unlist(test2$Correct)
-table(test2$Correct) # 67.74% correct / power = .807
+table(test2$Correct) # 74.9% correct / power = .796 / alpha = .046
 
 

@@ -119,7 +119,7 @@ for(j in seq_along(data[,1])){
     zip.dep <- zip.deposits[zip.deposits$Year==LY & zip.deposits$Zip==data$Zip[j], 3]
     if(length(zip.dep)>0) data$Zip.Deposits.LY[j] <- zip.dep  
 }
-#data <- data[!duplicated(data), ]
+#data2 <- data[!duplicated(data), ]
 
 # write.csv(data, "full_factors.csv", row.names=FALSE)
 
