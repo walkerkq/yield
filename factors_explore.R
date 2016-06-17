@@ -24,17 +24,19 @@ ggplot(missing2[missing2$variable!="2017 Fall", ], aes(Variable, value)) + geom_
     theme(axis.text.x = element_text(angle=30, hjust=1, size=12)) + labs(title="Missingness by Variable")
 
 # check for collinearity
-collin <- round(cor(data1[,c(3,4,7,8, 11:37)], use = "pair"), 2) 
-# don't use zip alumni pop, made deposit
+collin <- round(cor(data[,c(1,4:34)], use = "pair"), 2) 
+# don't use made deposit, total.inst.gift, comp.cost
+data <- data[ ,-c(12,14,27)]
 
 # option 1: drop 2010-2012 + impute missing values (+ drop schol. status, hs size and total inst. gift)
 # option 2: drop award status, comp. cost, first visit, gross need, group visit, hs size, ind. visit, last visit, schol. visit, scholarship status, total gift, total inst. gift and visit early (13 out of 40 vars)
 # do both and compare
 
+data$Final.Status <- as.numeric(gsub(0.5, 0, data$Final.Status))
 
 ################################ OPTION 1
-data1 <- data[data$Year %in% c("2014 Fall", "2015 Fall", "2016 Fall"), -c(17,19,26)]
-data1fit <- data1[ ,c(28,3,4,7,8,11:21,23:27,30:37)] # drop dates, id, year, deposit, alumni pop
+data1 <- data[data$Year %in% c("2014 Fall", "2015 Fall", "2016 Fall"), -2]
+data1fit <- data1[ , -c(7:9,13,19)] # drop ind.visit, schol.visit, group.visit, high school size, inst. gift, schol. status
 
 # impute missing values
 tempData <- mice(data1fit, m=1, maxit=50, meth='pmm', seed=500)
@@ -43,10 +45,7 @@ densityplot(tempData)
 data1fit.imp <- complete(tempData, 1)
 
 # fix binomial issues
-for(j in c(3,16)) data1fit.imp[,j] <- round(data1fit.imp[,j]*100)
-data1fit.imp$Zip.Alumni.Density <- round(data1fit.imp$Zip.Alumni.Density*1000) # thousanths
-data1fit.imp$Distance.Mhd <- round(data1fit.imp$Distance.Mhd)
-data1fit.imp <- data1fit.imp[data1fit.imp$Final.Status!=0.5,]
+for(j in c(4,8,9,10,11,12,13,14,24,25)) data1fit.imp[,j] <- round(data1fit.imp[,j])
 
 # test and train sets
 smp_size <- floor(0.75 * nrow(data1fit.imp))
@@ -56,17 +55,12 @@ train1 <- data1fit.imp[train_ind, ]
 test1 <- data1fit.imp[-train_ind, ]
 
 # fit model
-fit1g <- glm(Final.Status ~ ., train1, family="binomial")
+fit1g <- glm(Final.Status ~ ., train1[,-2], family="binomial")
 fit1gs <- step(fit1g, direction="both", trace=0)
-fit1gs2 <- glm(Final.Status ~ GPA + Number.Campus.Visits + Ind.Visit + 
-                   Group.Visit + Schol.Visit + Comprehensive.Cost + 
-                   Total.Gift + Zip.Alumni.Density + Visit.Before.App + 
-                   FAFSA + Visit.Early, train1, family="binomial") 
-                    # fewer and fewer vars are sig with each rerun
 
-coef1 <- exp(cbind(Odds.Ratio = coef(fit1gs2), confint(fit1gs2)))
+coef1 <- exp(cbind(Odds.Ratio = coef(fit1gs), confint(fit1gs)))
 
-test1$Predictions_raw <- unlist(predict(fit1gs2, test1, type="response"))
+test1$Predictions_raw <- unlist(predict(fit1gs, test1, type="response"))
 test1$Predictions <- unlist(round(test1$Predictions_raw))
 
 for(u in seq_along(test1$Predictions)){
@@ -76,13 +70,13 @@ for(u in seq_along(test1$Predictions)){
     }
 }
 test1$Correct <- unlist(test1$Correct)
-table(test1$Correct) # 97.8% correct / power = 0.985
+table(test1$Correct) # 92.2% correct / power = 0.954 / 0.031 alpha
 
 
 
 ################################ OPTION 2
-data2 <- data[ , c(1:8, 20:25, 27:39)]
-data2fit <- data2[ ,c(19,3,4,7:12, 14:18,21:22)] # drop dates, id, year, deposit, alumni pop
+data2 <- data[ , -c(8:14,20,34)]
+data2fit <- data2[ ,-c(2,3)] # drop id, year
 
 # impute missing values
 tempData <- mice(data2fit, m=1, maxit=50, meth='pmm', seed=500)
@@ -91,10 +85,7 @@ densityplot(tempData)
 data2fit.imp <- complete(tempData, 1)
 
 # fix binomial issues
-for(j in c(3,9)) data2fit.imp[,j] <- round(data2fit.imp[,j]*100)
-data2fit.imp$Zip.Alumni.Density <- round(data2fit.imp$Zip.Alumni.Density*1000) # thousanths
-data2fit.imp$Distance.Mhd <- round(data2fit.imp$Distance.Mhd)
-data2fit.imp <- data2fit.imp[data2fit.imp$Final.Status!=0.5,]
+for(j in c(3,6:10,20,21)) data2fit.imp[,j] <- round(data2fit.imp[,j])
 
 # test and train sets
 smp_size <- floor(0.75 * nrow(data2fit.imp))
@@ -118,6 +109,6 @@ for(u in seq_along(test2$Predictions)){
     }
 }
 test2$Correct <- unlist(test2$Correct)
-table(test2$Correct) # 74.9% correct / power = .796 / alpha = .046
+table(test2$Correct) # 78.7% correct / power = .837 / alpha = .0496
 
 

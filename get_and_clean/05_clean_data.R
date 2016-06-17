@@ -30,6 +30,10 @@ data$Visit.Before.App <- 0
 data$FAFSA <- 0
 data$Zip.Admits.TY <- 0
 data$Zip.Deposits.LY <- 0
+data$Zip.Deposits.LY.Pct <- 0
+data$Zip.Admits.TY.Pct <- 0
+data$Month.App.Submitted <- 0
+data$Month.First.Visit <- 0
 
 zip.admits <- data.frame(table(data$Year, data$Zip))
 colnames(zip.admits) <- c("Year", "Zip", "Count")
@@ -112,18 +116,39 @@ for(j in seq_along(data[,1])){
     
     # calculate # of admits from zip code currently
     zip.ad <- zip.admits[zip.admits$Year==data$Year[j] & zip.admits$Zip==data$Zip[j], 3]
-    if(length(zip.ad)>0) data$Zip.Admits.TY[j] <- zip.ad
+    if(length(zip.ad)>0) {
+        data$Zip.Admits.TY[j] <- zip.ad
+        data$Zip.Admits.TY.Pct[j] <- zip.ad/data$Zip.Population[j]
+    }
     
     # calculate # of deposts from zip code last year
     LY <- year.ref[year.ref$TY==data$Year[j], 2]
     zip.dep <- zip.deposits[zip.deposits$Year==LY & zip.deposits$Zip==data$Zip[j], 3]
-    if(length(zip.dep)>0) data$Zip.Deposits.LY[j] <- zip.dep  
+    if(length(zip.dep)>0) {
+        data$Zip.Deposits.LY[j] <- zip.dep  
+        data$Zip.Deposits.LY.Pct[j] <- zip.dep/data$Zip.Population[j]
+    }
+    
+    data$Month.App.Submitted[j] <- format(data$Date.App.Submitted[j], "%m")
+    data$Month.First.Visit[j] <- format(data$First.Visit[j], "%m")
+    
 }
 #data2 <- data[!duplicated(data), ]
 
 # write.csv(data, "full_factors.csv", row.names=FALSE)
-
+# data <-  read.csv("full_factors.csv", stringsAsFactors=FALSE)
 # remove excess
-data.min <- data[,c(1,2,6,7,8,18,19,20,22:53)]
+data.min <- data[,c(44,1,2,6,7,19,20,24:36,38:43,45:50,53:57)]
+
+# change some units
+# thousands of dollars / pop
+for(i in c(12,13,14,15,18,19)) data.min[,i] <- data.min[,i]/1000
+# make pos. numbers 
+for(k in c(21, 33, 34)) data.min[,k] <- data.min[,k]*10000
+data.min$Zip.Admits.TY.Pct <- gsub("Inf", NA, data.min$Zip.Admits.TY.Pct)
+# make decimals into percents
+data.min$Zip.Pct.White <- data.min$Zip.Pct.White*100
+data.min$GPA <- data.min$GPA*10
+
 # write.csv(data.min, "min_factors.csv", row.names=FALSE)
 
