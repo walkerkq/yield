@@ -4,7 +4,7 @@
 # in: all_combined.csv
 # out: full_factors.csv, min_factors.csv
 
-setwd("/Users/kwalker/git_projects/yield/")
+setwd("/Users/kaylinwalker/R/yield/")
 data <- read.csv("data/all_combined.csv", stringsAsFactors=FALSE)
 
 # clean up
@@ -28,26 +28,16 @@ data$Made.Deposit <- 0
 data$Ethnicity.Indicator <- 0
 data$Lutheran.Indicator <- 0
 data$Religious.Indicator <- 0
-data$Visit.Before.App <- 0
 data$FAFSA <- 0
 data$Zip.Admits.TY <- 0
 data$Zip.Admits.TY.Pct <- 0
-data$Applied.Summer <- 0
-data$Applied.Fall <- 0
-data$Applied.Winter <- 0
-data$Applied.Spring <- 0
-data$Applied.Before.Sr <- 0
-data$First.Visit.Before.Sr <- 0
-data$First.Visit.Fall <- 0
-data$First.Visit.Winter <- 0
-data$First.Visit.Spring <- 0
-data$First.Visit.Summer <- 0
+data$App.Before.Nov <- 0
 
 zip.admits <- data.frame(table(data$Year, data$Zip))
 colnames(zip.admits) <- c("Year", "Zip", "Count")
 zip.deposits <- data.frame(table(data$Year[data$Contact.Status=="Deposit"], data$Zip[data$Contact.Status=="Deposit"]))
 colnames(zip.deposits) <- c("Year", "Zip", "Count")
-year.ref <- data.frame(TY=c("2015 Fall", "2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall"), LY=c("2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall", NA), stringsAsFactors=FALSE)
+#year.ref <- data.frame(TY=c("2015 Fall", "2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall"), LY=c("2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall", NA), stringsAsFactors=FALSE)
 
 for(j in seq_along(data[,1])){
     
@@ -109,57 +99,20 @@ for(j in seq_along(data[,1])){
         data$Royal15[j] <- 1
     }
     
-    # season of first visit
-    if(!is.na(data$First.Visit[j])) { 
-        # if the student visited before applying, assign a 1
-        if(data$First.Visit[j] < data$Date.App.Submitted[j]) {
-            data$Visit.Before.App[j] <- 1
-        }
-        # season first visit
-        month <- format(data$First.Visit[j], format="%m")
-       if (month %in% c("06", "07", "08")) { 
-           data$First.Visit.Summer[j] <- 1 
-       } else if (month %in% c("09", "10", "11")) { 
-           data$First.Visit.Fall[j] <- 1 
-       } else if (month %in% c("12", "01", "02")) { 
-           data$First.Visit.Winter[j] <- 1 
-       } else if (month %in% c("03", "04", "05")) { 
-           data$First.Visit.Spring[j] <- 1 
-       }
-        
-       if(data$Year[j]=="2014 Fall"){
-            if(data$First.Visit[j] < as.Date("2013-08-01")) { data$First.Visit.Before.Sr[j] <- 1 }
-        } else if(data$Year[j]=="2015 Fall"){
-            if(data$First.Visit[j] < as.Date("2014-08-01")) { data$First.Visit.Before.Sr[j] <- 1 }
-        } else if (data$Year[j]=="2016 Fall"){
-            if(data$First.Visit[j] < as.Date("2015-08-01")) { data$First.Visit.Before.Sr[j] <- 1 }
-        } 
-        
-    }
-    
     if(is.na(data$Countdown[j])) data$Countdown[j] <- 0
     if(is.na(data$Summer[j])) data$Summer[j] <- 0
     if(is.na(data$Number.Campus.Visits.y[j])) data$Number.Campus.Visits.y[j] <- 0
     
-    # season of app
-    app.month <- format(data$Date.App.Submitted[j], format="%m")
-    if (app.month %in% c("06", "07", "08")) { 
-        data$Applied.Summer[j] <- 1 
-    } else if (app.month %in% c("09", "10", "11")) { 
-        data$Applied.Fall[j] <- 1 
-    } else if (app.month %in% c("12", "01", "02")) { 
-        data$Applied.Winter[j] <- 1 
-    } else if (app.month %in% c("03", "04", "05")) { 
-        data$Applied.Spring[j] <- 1 
+    # applied before nov 1 
+    if(data$Year[j]=="2014 Fall") {
+         adj.date <- data$Date.App.Submitted[j] + 365
+    } else if(data$Year[j]=="2015 Fall") {
+         adj.date <- data$Date.App.Submitted[j] 
+    } else if(data$Year[j]=="2016 Fall") {
+         adj.date <- data$Date.App.Submitted[j] - 365
     } 
+   if(adj.date < as.Date("2014-11-01")) data$App.Before.Nov[j] <- 1
     
-    if(data$Year[j] %in% "2014 Fall"){
-        if(data$Date.App.Submitted[j] < as.Date("2013-09-01")) data$Applied.Before.Sr[j] <- 1
-    } else if(data$Year[j] %in% "2015 Fall"){
-        if(data$Date.App.Submitted[j] < as.Date("2014-09-01")) data$Applied.Before.Sr[j] <- 1
-    } else if(data$Year[j] %in% "2016 Fall"){
-        if(data$Date.App.Submitted[j] < as.Date("2015-09-01")) data$Applied.Before.Sr[j] <- 1
-    }
     
     # calculate # of admits from zip code currently
     zip.ad <- zip.admits[zip.admits$Year==data$Year[j] & zip.admits$Zip==data$Zip[j], 3]
