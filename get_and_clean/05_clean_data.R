@@ -164,19 +164,18 @@ for(j in seq_along(data[,1])){
 remove <- c("ID", "Contact.Status", "Admission.Substatus", "Major.Interest", "Date.App.Submitted", 
             "Date.App.Completed", "Date.Deposited", "Legacy", "Co.Curricular", "Gender", "Ethnicity", "Religious.Preference",
             "HS.Name", "City", "State", "Zip", "Number.Campus.Visits.x", "Royal.ID", "First.Visit", "Last.Visit",
-            "Comprehensive.Cost", "Total.Institutional.Gift")
+            "Comprehensive.Cost", "Total.Institutional.Gift", "ACT", "GPA", "HS.Percentile", "Distance.Mhd")
 
 data.min <- data[,-which(names(data) %in% c(remove))]
 
 # change some units
 # thousands of dollars / pop
-for(i in c(10,11,13,14)) data.min[,i] <- data.min[,i]/1000
+for(i in c(7,8,9,10)) data.min[,i] <- data.min[,i]/1000
 # make pos. numbers 
-for(k in c(17,30)) data.min[,k] <- data.min[,k]*10000
+for(k in c(13,26)) data.min[,k] <- data.min[,k]*10000
 data.min$Zip.Admits.TY.Pct <- gsub("Inf", NA, data.min$Zip.Admits.TY.Pct)
 # make decimals into percents
 data.min$Zip.Pct.White <- data.min$Zip.Pct.White*100
-data.min$GPA <- data.min$GPA*10
 
 # write.csv(data.min, "min_factors.csv", row.names=FALSE)
 
