@@ -4,7 +4,7 @@
 # in: all_combined.csv
 # out: full_factors.csv, min_factors.csv
 
-setwd("/Users/kaylinwalker/R/yield/")
+setwd("/Users/kwalker/git_projects/yield/")
 data <- read.csv("data/all_combined.csv", stringsAsFactors=FALSE)
 
 # clean up
@@ -32,12 +32,19 @@ data$FAFSA <- 0
 data$Zip.Admits.TY <- 0
 data$Zip.Admits.TY.Pct <- 0
 data$App.Before.Nov <- 0
+data$ACT.Low <- 0
+data$ACT.High <- 0
+data$GPA.Low <- 0
+data$GPA.High <- 0
+data$HSP.Low <- 0
+data$HSP.High <- 0
+data$Distance.Low <- 0
+data$Distance.High <- 0
 
 zip.admits <- data.frame(table(data$Year, data$Zip))
 colnames(zip.admits) <- c("Year", "Zip", "Count")
 zip.deposits <- data.frame(table(data$Year[data$Contact.Status=="Deposit"], data$Zip[data$Contact.Status=="Deposit"]))
 colnames(zip.deposits) <- c("Year", "Zip", "Count")
-#year.ref <- data.frame(TY=c("2015 Fall", "2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall"), LY=c("2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall", NA), stringsAsFactors=FALSE)
 
 for(j in seq_along(data[,1])){
     
@@ -120,6 +127,34 @@ for(j in seq_along(data[,1])){
         data$Zip.Admits.TY[j] <- zip.ad
         data$Zip.Admits.TY.Pct[j] <- (zip.ad/data$Zip.Population[j])
     }
+   
+    #ACT, GPA, HS Percentile cutoffs
+   if(data$ACT[j] <= 24) {
+       data$ACT.Low[j] <- 1
+   } else if(data$ACT[j] >= 33) {
+       data$ACT.High[j] <- 1
+   }
+   if(!is.na(data$GPA[j])){ 
+       if(data$GPA[j] < 3.0) {
+           data$GPA.Low[j] <- 1
+       } else if(data$GPA[j] > 3.9) {
+           data$GPA.High[j] <- 1
+       }
+   }
+   if(!is.na(data$HS.Percentile[j])) { 
+       if(data$HS.Percentile[j] < 75) {
+           data$HSP.Low[j] <- 1
+       } else if(data$HS.Percentile[j] > 90) {
+           data$HSP.High[j] <- 1
+       }
+   }
+   if(!is.na(data$Distance.Mhd[j])){
+       if(data$Distance.Mhd[j] < 75){
+           data$Distance.Low[j] <- 1
+       } else if(data$Distance.Mhd[j] > 300){
+           data$Distance.High[j] <- 1
+       } 
+   }
     
 }
 
@@ -137,7 +172,7 @@ data.min <- data[,-which(names(data) %in% c(remove))]
 # thousands of dollars / pop
 for(i in c(10,11,13,14)) data.min[,i] <- data.min[,i]/1000
 # make pos. numbers 
-for(k in c(17,31)) data.min[,k] <- data.min[,k]*10000
+for(k in c(17,30)) data.min[,k] <- data.min[,k]*10000
 data.min$Zip.Admits.TY.Pct <- gsub("Inf", NA, data.min$Zip.Admits.TY.Pct)
 # make decimals into percents
 data.min$Zip.Pct.White <- data.min$Zip.Pct.White*100
