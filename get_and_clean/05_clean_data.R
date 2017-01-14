@@ -14,7 +14,12 @@ data$Contact.Status <- gsub("\\: ", "", data$Contact.Status)
 data$Co.Curricular <- tolower(data$Co.Curricular)
 data$Major.Interest <- tolower(data$Major.Interest)
 data$Date.App.Submitted <- as.Date(data$Date.App.Submitted, format="%m/%d/%Y")
+data$Date.App.Completed <- as.Date(data$Date.App.Completed, format="%m/%d/%Y")
+data$Date.Deposited <- as.Date(data$Date.Deposited, format="%m/%d/%Y")
 data$First.Visit <- as.Date(data$First.Visit, format="%Y-%m-%d")
+data$Second.Visit <- as.Date(data$Second.Visit, format="%Y-%m-%d")
+data$Third.Visit <- as.Date(data$Third.Visit, format="%Y-%m-%d")
+data$Last.Visit <- as.Date(data$Last.Visit, format="%Y-%m-%d")
 
 data <- data[!is.na(data$Date.App.Submitted), ]
 
@@ -32,6 +37,19 @@ data$FAFSA <- 0
 data$Zip.Admits.TY <- 0
 data$Zip.Admits.TY.Pct <- 0
 data$App.Before.Nov <- 0
+data$Visits.by.Jan1 <- 0
+
+### scale dates to be all oriented around fall 2015
+for(j in seq_along(data[,1])){
+   if(data$Year[j]=="2014 Fall"){
+        edit <- 365
+   } else if(data$Year[j]=="2016 Fall"){
+        edit <- -365
+   } else { edit <- 0 }
+   for(b in c(9:11,24:27)) {
+        data[j,b] <- data[j,b] + edit
+   }
+}
 
 zip.admits <- data.frame(table(data$Year, data$Zip))
 colnames(zip.admits) <- c("Year", "Zip", "Count")
@@ -104,16 +122,15 @@ for(j in seq_along(data[,1])){
     if(is.na(data$Number.Campus.Visits.y[j])) data$Number.Campus.Visits.y[j] <- 0
     
     # applied before nov 1 
-    if(data$Year[j]=="2014 Fall") {
-         adj.date <- data$Date.App.Submitted[j] + 365
-    } else if(data$Year[j]=="2015 Fall") {
-         adj.date <- data$Date.App.Submitted[j] 
-    } else if(data$Year[j]=="2016 Fall") {
-         adj.date <- data$Date.App.Submitted[j] - 365
-    } 
-   if(adj.date < as.Date("2014-11-01")) data$App.Before.Nov[j] <- 1
-    
-    
+   if(data$Date.App.Submitted[j] < as.Date("2014-11-01")) data$App.Before.Nov[j] <- 1
+
+   # number visits by jan 1
+   visits <- data[j,c("First.Visit", "Second.Visit", "Third.Visit", "Last.Visit")]
+   if(!is.na(visits$First.Visit) & !is.na(visits$Last.Visit) & visits$First.Visit == visits$Last.Visit){
+        visits <- visits[,-1]
+   }
+   data$Visits.by.Jan1[j] <- suppressWarnings(length(which(visits < as.Date("2015-01-01"))))
+   
     # calculate # of admits from zip code currently
     zip.ad <- zip.admits[zip.admits$Year==data$Year[j] & zip.admits$Zip==data$Zip[j], 3]
     if(length(zip.ad)>0) {
@@ -125,19 +142,38 @@ for(j in seq_along(data[,1])){
 
 # write.csv(data, "full_factors.csv", row.names=FALSE)
 # data <-  read.csv("full_factors.csv", stringsAsFactors=FALSE)
+# cut down as if we are running the model on Jan. 1
+data$Date.App.Submitted <- as.Date(data$Date.App.Submitted, format="%Y-%m-%d")
+data2 <- data[data$Date.App.Submitted <= as.Date("2015-01-01"), ]
+
+# admits this year needs to be by 1/1
+data2$Zip.Admits.TY <- 0
+data2$Zip.Admits.TY.Pct <- 0
+for(j in seq_along(data2[,1])){
+     # calculate # of admits from zip code currently
+     zip.ad <- zip.admits[zip.admits$Year==data2$Year[j] & zip.admits$Zip==data2$Zip[j], 3]
+     if(length(zip.ad)>0) {
+          data2$Zip.Admits.TY[j] <- zip.ad
+          data2$Zip.Admits.TY.Pct[j] <- (zip.ad/data2$Zip.Population[j])
+     }
+}
+
 # remove excess
 remove <- c("ID", "Contact.Status", "Admission.Substatus", "Major.Interest", "Date.App.Submitted", 
             "Date.App.Completed", "Date.Deposited", "Legacy", "Co.Curricular", "Gender", "Ethnicity", "Religious.Preference",
-            "HS.Name", "City", "State", "Zip", "Number.Campus.Visits.x", "Royal.ID", "First.Visit", "Last.Visit",
-            "Comprehensive.Cost", "Total.Institutional.Gift")
+            "HS.Name", "City", "State", "Zip", "Number.Campus.Visits.x", "Royal.ID", "First.Visit", "Second.Visit", "Third.Visit", "Last.Visit",
+            "Summer", "Countdown", "Comprehensive.Cost", "Total.Institutional.Gift", 
+            # removed due to time concerns (post-1/1)
+            "FAFSA", "Number.Campus.Visits.y", "Award.Status", "Made.Deposit",
+            "Cost.of.Attendance", "Total.Gift", "Gross.Need")
 
 data.min <- data[,-which(names(data) %in% c(remove))]
 
 # change some units
 # thousands of dollars / pop
-for(i in c(10,11,13,14)) data.min[,i] <- data.min[,i]/1000
+for(i in c(7,8)) data.min[,i] <- data.min[,i]/1000
 # make pos. numbers 
-for(k in c(17,31)) data.min[,k] <- data.min[,k]*10000
+for(k in c(11,22)) data.min[,k] <- data.min[,k]*10000
 data.min$Zip.Admits.TY.Pct <- gsub("Inf", NA, data.min$Zip.Admits.TY.Pct)
 # make decimals into percents
 data.min$Zip.Pct.White <- data.min$Zip.Pct.White*100

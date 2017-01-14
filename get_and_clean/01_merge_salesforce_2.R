@@ -6,11 +6,11 @@
 # out: salesforce_combined.csv
 
 # read in raw data from Salesforce
-setwd("/Users/kwalker/Downloads")
+setwd("/Users/kaylinwalker/R/yield/data")
 
 ####################### FINANCIAL AID OBJECT ####################### 
 finaid <- read.csv("FinAidFactors.csv", stringsAsFactors=FALSE) 
-## DUPES!!!!
+## Duplicates found. Keep the larger award.
 finaid_condense <- NULL
 for(fa in unique(finaid$Application.ID)){
     sub <- finaid[finaid$Application.ID==fa, ]
@@ -30,19 +30,32 @@ for(w in unique(visit$Active.Application.Record)) {
     sub <- sub[order(sub$Visit.Date), ]
     Summer <- 0
     Countdown <- 0
+    # recording up to 4 visits accounts for 99% of apps
     First.Visit <- NA
+    Second.Visit <- NA
+    Third.Visit <- NA
     Last.Visit <- NA
     Number.Campus.Visits <- 0 
     if("Summer Orientation" %in% sub$Campus.Visit..Record.Type) Summer <-1
     if("Cobber Countdown" %in% sub$Campus.Visit..Record.Type) Countdown <- 1
     sub2 <- sub[!(sub$Campus.Visit..Record.Type %in% c("Cobber Countdown", "Summer Orientation")), ]
-    if(nrow(sub2)>0) { Number.Campus.Visits <- nrow(sub2)  
-    First.Visit <- sub$Visit.Date[1]
-    Last.Visit <- sub$Visit.Date[length(sub2[,1])]
+    if(nrow(sub2)>0) { 
+      Number.Campus.Visits <- nrow(sub2)  
+      First.Visit <- sub2$Visit.Date[1]
+      Last.Visit <- sub2$Visit.Date[length(sub2[,1])]
+      if(Number.Campus.Visits > 2){
+           Second.Visit <- sub2$Visit.Date[2]
+           if(Number.Campus.Visits > 3){
+                Third.Visit <- sub2$Visit.Date[3]
+           }
+      }
     }
-    row <- data.frame(ID=w, First.Visit, Last.Visit, Summer, Countdown, Number.Campus.Visits)
+    row <- data.frame(ID=w, First.Visit, Second.Visit, Third.Visit, Last.Visit, Summer, Countdown, Number.Campus.Visits)
+    for(i in c(2:5)) row[,i] <- as.Date(row[,i], format="%Y-%m-%d")
     visit_condense <- rbind(visit_condense, row)
+    for(i in c(2:5)) visit_condense[,i] <- as.Date(visit_condense[,i], format="%Y-%m-%d")
 }
+
 ## GOOD. 
 
 ####################### APPLICATION OBJECT ####################### 

@@ -5,7 +5,7 @@
 # out: all_combined.csv
 
 
-setwd("/Users/kwalker/git_projects/yield")
+setwd("/Users/kaylinwalker/R/yield")
 data <- read.csv("data/salesforce_combined.csv", stringsAsFactors=FALSE)
 
 # clean zip code feature
