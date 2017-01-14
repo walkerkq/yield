@@ -4,7 +4,7 @@
 # in: all_combined.csv
 # out: full_factors.csv, min_factors.csv
 
-setwd("/Users/kaylinwalker/R/yield/")
+setwd("/Users/kwalker/git_projects/yield/")
 data <- read.csv("data/all_combined.csv", stringsAsFactors=FALSE)
 
 # clean up
@@ -37,6 +37,7 @@ data$FAFSA <- 0
 data$Zip.Admits.TY <- 0
 data$Zip.Admits.TY.Pct <- 0
 data$App.Before.Nov <- 0
+<<<<<<< HEAD
 data$Visits.by.Jan1 <- 0
 
 ### scale dates to be all oriented around fall 2015
@@ -50,12 +51,21 @@ for(j in seq_along(data[,1])){
         data[j,b] <- data[j,b] + edit
    }
 }
+=======
+data$ACT.Low <- 0
+data$ACT.High <- 0
+data$GPA.Low <- 0
+data$GPA.High <- 0
+data$HSP.Low <- 0
+data$HSP.High <- 0
+data$Distance.Low <- 0
+data$Distance.High <- 0
+>>>>>>> origin/master
 
 zip.admits <- data.frame(table(data$Year, data$Zip))
 colnames(zip.admits) <- c("Year", "Zip", "Count")
 zip.deposits <- data.frame(table(data$Year[data$Contact.Status=="Deposit"], data$Zip[data$Contact.Status=="Deposit"]))
 colnames(zip.deposits) <- c("Year", "Zip", "Count")
-#year.ref <- data.frame(TY=c("2015 Fall", "2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall"), LY=c("2014 Fall", "2013 Fall", "2012 Fall", "2011 Fall", "2010 Fall", NA), stringsAsFactors=FALSE)
 
 for(j in seq_along(data[,1])){
     
@@ -137,6 +147,34 @@ for(j in seq_along(data[,1])){
         data$Zip.Admits.TY[j] <- zip.ad
         data$Zip.Admits.TY.Pct[j] <- (zip.ad/data$Zip.Population[j])
     }
+   
+    #ACT, GPA, HS Percentile cutoffs
+   if(data$ACT[j] <= 24) {
+       data$ACT.Low[j] <- 1
+   } else if(data$ACT[j] >= 33) {
+       data$ACT.High[j] <- 1
+   }
+   if(!is.na(data$GPA[j])){ 
+       if(data$GPA[j] < 3.0) {
+           data$GPA.Low[j] <- 1
+       } else if(data$GPA[j] > 3.9) {
+           data$GPA.High[j] <- 1
+       }
+   }
+   if(!is.na(data$HS.Percentile[j])) { 
+       if(data$HS.Percentile[j] < 75) {
+           data$HSP.Low[j] <- 1
+       } else if(data$HS.Percentile[j] > 90) {
+           data$HSP.High[j] <- 1
+       }
+   }
+   if(!is.na(data$Distance.Mhd[j])){
+       if(data$Distance.Mhd[j] < 75){
+           data$Distance.Low[j] <- 1
+       } else if(data$Distance.Mhd[j] > 300){
+           data$Distance.High[j] <- 1
+       } 
+   }
     
 }
 
@@ -161,23 +199,33 @@ for(j in seq_along(data2[,1])){
 # remove excess
 remove <- c("ID", "Contact.Status", "Admission.Substatus", "Major.Interest", "Date.App.Submitted", 
             "Date.App.Completed", "Date.Deposited", "Legacy", "Co.Curricular", "Gender", "Ethnicity", "Religious.Preference",
+<<<<<<< HEAD
             "HS.Name", "City", "State", "Zip", "Number.Campus.Visits.x", "Royal.ID", "First.Visit", "Second.Visit", "Third.Visit", "Last.Visit",
             "Summer", "Countdown", "Comprehensive.Cost", "Total.Institutional.Gift", 
             # removed due to time concerns (post-1/1)
             "FAFSA", "Number.Campus.Visits.y", "Award.Status", "Made.Deposit",
             "Cost.of.Attendance", "Total.Gift", "Gross.Need")
+=======
+            "HS.Name", "City", "State", "Zip", "Number.Campus.Visits.x", "Royal.ID", "First.Visit", "Last.Visit",
+            "Comprehensive.Cost", "Total.Institutional.Gift", "ACT", "GPA", "HS.Percentile", "Distance.Mhd")
+>>>>>>> origin/master
 
 data.min <- data[,-which(names(data) %in% c(remove))]
 
 # change some units
 # thousands of dollars / pop
+<<<<<<< HEAD
 for(i in c(7,8)) data.min[,i] <- data.min[,i]/1000
 # make pos. numbers 
 for(k in c(11,22)) data.min[,k] <- data.min[,k]*10000
+=======
+for(i in c(7,8,9,10)) data.min[,i] <- data.min[,i]/1000
+# make pos. numbers 
+for(k in c(13,26)) data.min[,k] <- data.min[,k]*10000
+>>>>>>> origin/master
 data.min$Zip.Admits.TY.Pct <- gsub("Inf", NA, data.min$Zip.Admits.TY.Pct)
 # make decimals into percents
 data.min$Zip.Pct.White <- data.min$Zip.Pct.White*100
-data.min$GPA <- data.min$GPA*10
 
 # write.csv(data.min, "min_factors.csv", row.names=FALSE)
 
