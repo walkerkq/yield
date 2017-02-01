@@ -44,15 +44,16 @@ data$Religious.Indicator[data$Religious.Preference==""] <- 0
 data$Royal15[!is.na(data$Royal.ID)] <- 1
 
 remove <- c("Major.Interest", "Admission.Substatus", "Contact.Status", "Legacy", "Co.Curricular", "Gender", "Award.Status",
-            "Gender", "Ethnicity", "Religious.Preference", "City", "State", "Number.Campus.Visits", "Royal.ID", "HS.Name", "Zip")
+            "Gender", "Ethnicity", "Religious.Preference", "City", "State", "Number.Campus.Visits", "Royal.ID", "HS.Name", "Zip",
+            "Zip.Alumni.Pop", "Cost.of.Attendance", "Total.Gift", "Total.Institutional.Gift", "Gross.Need")
 
 data <- data[ , which(!(names(data) %in% remove))]
 
-date_nums <- c(6:8, 14:17)
+date_nums <- c(6:8, 10:13)
 non_date_data <- data[ ,-date_nums]
-non_date_data <- non_date_data[,c(22, 1:21, 23:25)]
-# write.csv(non_date_data, "non_date_data.csv", row.names=F)
+non_date_data <- non_date_data[,c(17, 1:16, 18:20)]
+# write.csv(non_date_data, "data/non_date_data.csv", row.names=F)
 
 # date-dependent data
 date_data <- data[ , c(1, date_nums)]
-# write.csv(date_data, "date_data.csv", row.names=F)
+# write.csv(date_data, "data/date_data.csv", row.names=F)
