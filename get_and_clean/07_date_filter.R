@@ -39,7 +39,7 @@ date_scale <- function(my_date) {
      data$CREDO.Accepted[is.na(data$CREDO.Accepted)] <- 0
 
      ## zip code
-     zips <- aggregate(App ~ Distance.Mhd, data, sum) # added in visit loop
+     zips <- aggregate(App ~ Distance.Mhd + Year, data, sum) # added in visit loop
           
      ## VISITS
      visit$Visit.Date <- as.Date(visit$Visit.Date, format = "%m/%d/%Y")
@@ -72,7 +72,7 @@ date_scale <- function(my_date) {
            }
        }
        ## zip code admits too
-       data$Other.Admits.Density[i] <- (zips$App[zips$Distance.Mhd %in% data$Distance.Mhd[i]])/data$Zip.Population[i]
+       data$Other.Admits.Density[i] <- (zips$App[zips$Distance.Mhd %in% data$Distance.Mhd[i] & zips$Year %in% data$Year[i]])/data$Zip.Population[i]
      }
      
      return(data)
@@ -81,5 +81,17 @@ date_scale <- function(my_date) {
 ### final file with info up to the date
 
 
+# choosing march 15 for 80% of fafsas in
+data <- date_scale(as.Date("2015-03-01"))
 
+# scale data
+#1000s
+data$Zip.Median.Income <- data$Zip.Median.Income/1000
+data$Zip.Population <- data$Zip.Population/1000
+# pcts
+data$Zip.Pct.White <- data$Zip.Pct.White*100
+data$Zip.Alumni.Density <- data$Zip.Alumni.Density*100
+data$Other.Admits.Density <- data$Other.Admits.Density*100
+
+#write.csv(data, "enrollment_data.csv", row.names=F)
 

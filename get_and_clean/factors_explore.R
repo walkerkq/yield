@@ -1,10 +1,11 @@
 setwd("/Users/kaylinwalker/R/yield")
-source("get_and_clean/07_date_filter.R")
+source("07_date_filter.R")
 
 # helpful: http://www.ats.ucla.edu/stat/r/dae/logit.htm
 
 library(reshape2)
 library(ggplot2)
+library(corrplot)
 
 # choosing march 15 for 80% of fafsas in
 data <- date_scale(as.Date("2015-03-01"))
@@ -19,14 +20,37 @@ data$Zip.Alumni.Density <- data$Zip.Alumni.Density*100
 data$Other.Admits.Density <- data$Other.Admits.Density*100
 
 # test and train sets
-train1 <- data[data$Year!="2016 Fall" & data$App=="1", ] # only use apps+ (not future apps)
-test1 <- data[data$Year=="2016 Fall" & data$App=="1", ]
+train1 <- data[data$Year!="2016 Fall" & data$App=="1", -c(6,19:25,28,32,35)] # only use apps+ (not future apps), no cut vars, no countdown/awards
+test1 <- data[data$Year=="2016 Fall" & data$App=="1", -c(6,19:25,28,32,35)]
+
+# check for collin
+co1 <- round(cor(train1[,-c(2,3)]),4)
+co1_concern <- co1[abs(co1)>0.75] # just an identity matrix --> good to go
+# make a correlation plot
+co1.df <- train1[,-c(2,3)]
+colnames(co1.df) <- c("Enrollment Status", "ACT", "GPA", "Distance from Moorhead", "Zip Income", "Zip Population", "Zip White", "Zip Alumni",
+                      "Music", "Athletics", "Legacy", "Gender", "Ethnicity", "Lutheran", "Religious", "Deposited", "FAFSA", "CREDO Invite",
+                      "CREDO Accept", "Visits", "Perf. Scholarship Event", "Academic Scholarship Event", "Zip Peer Admitted Students")
+co1 <- round(cor(co1.df),4)
+par(mar=c(rep(5,4)))
+corrplot(co1, method="color", type="upper", tl.col="black", tl.cex=.75,mar=c(0,0,1,0), order="FPC")
+# independence
+plot(predict(fit1gs),residuals(fit1gs))
+abline(h=0,lty=2,col="grey")
+lines(lowess(predict(fit1gs),residuals(fit1gs)),col="black",lwd=2)
+
+# summary stats of training set
+summary(train1)
+library(psych)
+describe(train1[,-c(2,3)], type=2)
+
 
 # fit model
-fit1g <- glm(Final.Status ~ ., train1[,-c(2,3,6,19:25,35)], family="binomial") # use cut vars + no countdown (since it is March)
+fit1g <- glm(Final.Status ~ ., train1[,-c(2,3)], family="binomial") 
 fit1gs <- step(fit1g, direction="both", trace=0)
 
-coef1 <- exp(cbind(Odds.Ratio = coef(fit1gs), confint(fit1gs)))
+coef1 <- exp(cbind(Odds.Ratio = coef(fit1g), confint(fit1g)))
+coef1s <- exp(cbind(Odds.Ratio = coef(fit1gs), confint(fit1gs)))
 
 test1$Predictions_raw <- unlist(predict(fit1gs, test1, type="response"))
 
@@ -50,18 +74,18 @@ ggplot(testm[testm$variable %in% c("accuracy", "tp", "fn"),], aes(cutoff, value)
 library(ROCR)
 test1$Predictions <- ifelse(test1$Predictions_raw>0.20, 1, 0)
 pred <- prediction(test1$Predictions, test1$Final.Status)
-perf <- performance(pred, "tnr", "fnr")
+perf <- performance(pred, "tpr", "fpr")
 auc <- performance(pred, measure="auc")
 auc <- auc@y.values[[1]]
 
-roc.data <- data.frame(fnr=unlist(perf@x.values),
-                       tnr=unlist(perf@y.values),
+roc.data <- data.frame(fpr=unlist(perf@x.values),
+                       tpr=unlist(perf@y.values),
                        model="GLM")
 
-ggplot(roc.data, aes(x=fnr, ymin=0, ymax=tnr)) +
+ggplot(roc.data, aes(x=fpr, ymin=0, ymax=tpr)) +
     geom_ribbon(alpha=0.2) +
-    geom_line(aes(y=tnr)) +
-    labs(title=paste0("ROC Curve w/ AUC=", auc))
+    geom_line(aes(y=tpr)) +
+    labs(title=paste0("ROC Curve w/ AUC=", round(auc,4)))
 
 
 
@@ -79,14 +103,15 @@ data2$Zip.Alumni.Density <- data2$Zip.Alumni.Density*100
 data2$Other.Admits.Density <- data2$Other.Admits.Density*100
 
 # test and train sets
-train2 <- data2[data2$Year!="2016 Fall" & data2$App=="1", ] # only use apps+ (not future apps)
-test2 <- data2[data2$Year=="2016 Fall" & data2$App=="1", ]
+train2 <- data2[data2$Year!="2016 Fall" & data2$App=="1", -c(6,19:25,32)] # only use apps+ (not future apps)
+test2 <- data2[data2$Year=="2016 Fall" & data2$App=="1", -c(6,19:25,32)]
 
 # fit model
-fit2g <- glm(Final.Status ~ ., train2[,-c(2,3,4,5,6,7)], family="binomial") # use cut vars 
+fit2g <- glm(Final.Status ~ ., train2[,-c(2,3)], family="binomial") # use cut vars 
 fit2gs <- step(fit2g, direction="both", trace=0)
 
-coef2 <- exp(cbind(Odds.Ratio = coef(fit2gs), confint(fit2gs)))
+coef2 <- exp(cbind(Odds.Ratio = coef(fit2g), confint(fit2g)))
+coef2s <- exp(cbind(Odds.Ratio = coef(fit2gs), confint(fit2gs)))
 
 test2$Predictions_raw <- unlist(predict(fit2gs, test2, type="response"))
 
