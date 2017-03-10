@@ -1,4 +1,4 @@
-setwd("/Users/kaylinwalker/R/yield")
+setwd("/Users/kaylinwalker/R/yield/get_and_clean")
 source("07_date_filter.R")
 
 # helpful: http://www.ats.ucla.edu/stat/r/dae/logit.htm
@@ -18,6 +18,10 @@ data$Zip.Population <- data$Zip.Population/1000
 data$Zip.Pct.White <- data$Zip.Pct.White*100
 data$Zip.Alumni.Density <- data$Zip.Alumni.Density*100
 data$Other.Admits.Density <- data$Other.Admits.Density*100
+
+# data <- read.csv("enrollment_data.csv", stringsAsFactors=F)
+#train1 <- data[data$Year!="2016 Fall" & data$App=="1", -c(18)]
+#test1 <- data[data$Year=="2016 Fall" & data$App=="1", -c(18)]
 
 # test and train sets
 train1 <- data[data$Year!="2016 Fall" & data$App=="1", -c(6,19:25,28,32,35)] # only use apps+ (not future apps), no cut vars, no countdown/awards
@@ -152,4 +156,23 @@ comp <- merge(test1, comp2, by="ID", all=T)
 comp <- comp[!is.na(comp$Predictions.x),]
 comp_sm <- comp[,c(1,2,37,38,51,52)]
 xtabs(~ Predictions.x + Predictions.y, data=comp_sm)
+
+
+#OTHER
+library(randomForest)
+library(rpart)
+library(gbm)
+library(arm)
+
+r1 <- randomForest(Final.Status ~ ., train1)
+r2 <- gbm(Final.Status ~ ., data=train1)
+r3 <- rpart(y~x)
+r4 <- bayesglm(y ~ x, family=binomial)
+
+yy1 <- predict(r1, data.frame(x=test1))
+yy2 <- predict(r2, data.frame(x=xx))
+yy3 <- predict(r3, data.frame(x=xx))
+yy4 <- predict(r4, data.frame(x=xx), type="response")
+
+
 

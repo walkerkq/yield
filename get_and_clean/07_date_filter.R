@@ -93,5 +93,7 @@ data$Zip.Pct.White <- data$Zip.Pct.White*100
 data$Zip.Alumni.Density <- data$Zip.Alumni.Density*100
 data$Other.Admits.Density <- data$Other.Admits.Density*100
 
+data <- data[ , -c(6,19:24,28,32,35)]
+
 #write.csv(data, "enrollment_data.csv", row.names=F)
 
