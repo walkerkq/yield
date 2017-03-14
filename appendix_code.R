@@ -60,4 +60,4 @@ roc.data <- data.frame(fpr=unlist(perf@x.values),
                        tpr=unlist(perf@y.values),
                        model="GLM")
 ggplot(roc.data, aes(x=fpr, ymin=0, ymax=tpr)) + geom_ribbon(alpha=0.2) + 
-     geom_line(aes(y=tpr)) + labs(title=paste0("ROC Curve w/ AUC=", round(auc,4)))
+     geom_line(aes(y=tpr)) + labs(title=paste0("ROC Curve w/ AUC=", round(auc,4))) + theme_classic()

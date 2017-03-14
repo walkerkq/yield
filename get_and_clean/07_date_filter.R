@@ -3,7 +3,7 @@
 # in: date_data.csv, non_date_data_imputed.csv
 # out: data filtered by date
 
-setwd("/Users/kaylinwalker/R/yield")
+setwd("/Users/kpavlik/git_projects/yield")
 
 data <- read.csv("data/non_date_data_imputed.csv", stringsAsFactors=F)
 date_data <- read.csv("data/date_data.csv", stringsAsFactors=F)
