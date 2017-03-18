@@ -61,3 +61,9 @@ roc.data <- data.frame(fpr=unlist(perf@x.values),
                        model="GLM")
 ggplot(roc.data, aes(x=fpr, ymin=0, ymax=tpr)) + geom_ribbon(alpha=0.2) + 
      geom_line(aes(y=tpr)) + labs(title=paste0("ROC Curve w/ AUC=", round(auc,4))) + theme_classic()
+
+# test for overall model significance
+D <- fit1gs$null.deviance- fit1gs$deviance
+D.df <- fit1gs$df.null - fit1gs$df.residual
+p <- 1 - pchisq(D, df = D.df)
+
